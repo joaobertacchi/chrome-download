@@ -45,29 +45,47 @@ function toggleAll() {
 // Download all visible checked links.
 function downloadCheckedLinks() {
   console.log('download called');
+  const host = 'localhost';
+  const baseURL= `http://${host}:8000/`;
   for (var i = 0; i < visibleLinks.length; ++i) {
     if (document.getElementById('check' + i).checked) {
-      chrome.downloads.download({url: visibleLinks[i]},
-                                             function(id) {
-                                              console.log(`download started: ${id}`);
-        chrome.downloads.onChanged.addListener(function(downloadDelta) {
-          // console.log(downloadDelta);
-          if (downloadDelta.state && downloadDelta.state.current === 'complete') {
+      const downloader = new XMLHttpRequest();
+      const uploader = new XMLHttpRequest();
+      const filename = visibleLinks[i].split('/').pop()
+      const uploadURL = `${baseURL}${filename}`;
+      downloader.open('GET', visibleLinks[i]);
+      uploader.open('PUT', uploadURL);
+      // uploader.setRequestHeader('Host', host);
+      // uploader.setRequestHeader('Date', 'Thu, 07 Nov 2019 14:18:50 -0300');
+      uploader.onload = function() {
+        console.log(`upload finished:\n${uploader.response}`);
+      }
+      downloader.onload = function() {
+        console.log(`uploading to ${uploadURL} (${downloader.response.length})...`);
+        uploader.send(downloader.response);
+      };
+      downloader.send();
+      // chrome.downloads.download({url: visibleLinks[i]},
+      //                                        function(id) {
+      //                                         console.log(`download started: ${id}`);
+      //   chrome.downloads.onChanged.addListener(function(downloadDelta) {
+      //     // console.log(downloadDelta);
+      //     if (downloadDelta.state && downloadDelta.state.current === 'complete') {
 
-            chrome.downloads.search({ id: downloadDelta.id }, function(arr) {
-              console.log(arr[0].filename);
-              let xhr = new XMLHttpRequest();
-              const fileUrl = `file://${arr[0].filename}`;
-              // const fileUrl = "http://www.ic.unicamp.br/~stolfi/EXPORT/images/photos/people/stolfi-2/p-280x392.png";
-              xhr.open('GET', fileUrl);
-              xhr.onload = function() {
-                console.log(`Loaded: ${xhr.status}`);
-              };
-              xhr.send(null);
-            } );
-          }
-        });
-      });
+      //       chrome.downloads.search({ id: downloadDelta.id }, function(arr) {
+      //         console.log(arr[0].filename);
+      //         let xhr = new XMLHttpRequest();
+      //         const fileUrl = `file://${arr[0].filename}`;
+      //         // const fileUrl = "http://www.ic.unicamp.br/~stolfi/EXPORT/images/photos/people/stolfi-2/p-280x392.png";
+      //         xhr.open('GET', fileUrl);
+      //         xhr.onload = function() {
+      //           console.log(`Loaded: ${xhr.status}`);
+      //         };
+      //         xhr.send(null);
+      //       } );
+      //     }
+      //   });
+      // });
     }
   }
   // window.close();
